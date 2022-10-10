@@ -94,3 +94,16 @@ Exercise 1.3
 ============
 T is not constrained to be the smallest set satisfying 0 ∈ T and (n ∈ T) -> (n+3 ∈ T). Otherwise, the definition is similar to S. 
 Thus, any superset of S of the form `T = S ∪ {n*3+X | n ∈ N}` would work. Even the whole set of natural numbers `T = N` satisfies the condition.
+
+Exercise 1.4
+============
+```
+   List-of-Int
+=> (Int . List-of-Int)
+=> (-7 . List-of-Int)
+=> (-7 . (Int . List-of-Int))
+=> (-7 . (3 . List-of-Int))
+=> (-7 . (3 . (Int . List-of-Int)))
+=> (-7 . (3 . (14 . List-of-Int)))
+=> (-7 . (3 . (14 . ())))
+```
