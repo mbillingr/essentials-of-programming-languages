@@ -85,7 +85,12 @@ Exercise 1.1
      
 Exercise 1.2
 ============
-1. `S = {(n, n*7+1) | n ∈ N`
-2. `S = {(n, 2^n) | n ∈ N`
-3. `S = {(n, fib(n-1), fib(1)) | n ∈ N`
-4. `S = {(n, 2n+1, n^2) | n ∈ N`
+1. `S = {(n, n*7+1) | n ∈ N}`
+2. `S = {(n, 2^n) | n ∈ N}`
+3. `S = {(n, fib(n-1), fib(1)) | n ∈ N}`
+4. `S = {(n, 2n+1, n^2) | n ∈ N}`
+
+Exercise 1.3
+============
+T is not constrained to be the smallest set satisfying 0 ∈ T and (n ∈ T) -> (n+3 ∈ T). Otherwise, the definition is similar to S. 
+Thus, any superset of S of the form `T = S ∪ {n*3+X | n ∈ N}` would work. Even the whole set of natural numbers `T = N` satisfies the condition.
