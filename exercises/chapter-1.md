@@ -107,3 +107,9 @@ Exercise 1.4
 => (-7 . (3 . (14 . List-of-Int)))
 => (-7 . (3 . (14 . ())))
 ```
+
+Exercise 1.5
+============
+1. IH is true for identifiers, because they contain no parentheses.
+2. IH is true for lambda expressions if it is true for the subexpression, because the lambda adds two opening and two closing parenthesis.
+3. IH is true for calls if it is true for both subexpressions, because the call adds one opening and one closing parenthesis.
