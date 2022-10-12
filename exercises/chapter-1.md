@@ -126,3 +126,25 @@ If we simply swapped the conditions, the function behavior would be totally wron
         (nth-element (cdr lst) (- n 1))))
 ```
 This is more correct, but could cause `car` being called on an empty list. We'd have to duplicate the `null?` check in both branches of the outer if.
+
+Exercise 1.7
+============
+Solution that does not rely on non-local control flow such as exceptions. Would have been nicer to put the original arguments in the closure of a local recursion helper, but I'm not sure yet if local definitions are allowed, since the book uses define with lambda so far.
+```scheme
+(define nth-element
+  (lambda (lst n)
+    (nth-element-recursion-helper lst n lst)))
+        
+(define nth-element-recursion-helper
+  (lambda (lst n original n0)
+    (if (null? lst)
+      (report-list-too-short n original n0)
+      (if (zero? n)
+        (car lst)
+        (nth-element (cdr lst) (- n 1) original n0)))))
+
+(define report-list-too-short
+  (lambda (n lst)
+    (error 'nth-element
+      "List ~s does not have ~s elements.~%" lst n)))
+```
