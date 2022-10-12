@@ -113,3 +113,16 @@ Exercise 1.5
 1. IH is true for identifiers, because they contain no parentheses.
 2. IH is true for lambda expressions if it is true for the subexpression, because the lambda adds two opening and two closing parenthesis.
 3. IH is true for calls if it is true for both subexpressions, because the call adds one opening and one closing parenthesis.
+
+Exercise 1.6
+============
+I assume that order of tests refers to the conditions of the two ifs.
+If we simply swapped the conditions, the function behavior would be totally wrong. Instead, we would have to shuffle the branches a bit:
+```scheme
+(if (zero? n)
+    (car lst)
+    (if (null? lst)
+        (report-list-too-short n)
+        (nth-element (cdr lst) (- n 1))))
+```
+This is more correct, but could cause `car` being called on an empty list. We'd have to duplicate the `null?` check in both branches of the outer if.
