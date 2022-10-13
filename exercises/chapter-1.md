@@ -177,3 +177,8 @@ remove s (x :: xs) =
         then remove s xs
         else x :: remove s xs
 ```
+
+Exercise 1.10
+=============
+Since they explicitily say that they mean "inclusive or", I assume the other meaning they are alluding to is "exclusive or" (xor).
+Which would mean something like "either but not both".
