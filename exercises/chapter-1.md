@@ -196,3 +196,19 @@ subst new old [] = []
 subst new old ((S x) :: xs) = S (if x == old then new else old) :: (subst new old xs)
 subst new old ((L ys) :: xs) = L (subst new old xs) :: (subst new old xs)
 ```
+
+Exercise 1.13
+=============
+Untested, but I believe it's correct.
+```scheme
+(define subst
+  (lambda (new old slist)
+    (map (lambda (sexp) (subst-in-s-exp new old sexp)) slist)))
+```
+
+Idris also has a map function, and we don't need the lambda because of partial application.
+We can further write it in point-free style, omitting the third argument.
+```idris
+subst : String -> String -> Slist -> Slist
+subst new old = map (subst_in_sexp new old)
+```
