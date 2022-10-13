@@ -187,3 +187,12 @@ Exercise 1.11
 =============
 ALthough recursion in subst-in-exp is not on a smaller substructure, it calls subst, which only recurs on smaller substructure.
 Every path through both mutually recursive procedures eventually leads to smaller substructure, so recursion is guaranteed to halt.
+
+Exercise 1.12
+=============
+```idris
+subst : String -> String -> Slist -> Slist
+subst new old [] = []
+subst new old ((S x) :: xs) = S (if x == old then new else old) :: (subst new old xs)
+subst new old ((L ys) :: xs) = L (subst new old xs) :: (subst new old xs)
+```
