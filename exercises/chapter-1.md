@@ -148,3 +148,17 @@ Solution that does not rely on non-local control flow such as exceptions. Would 
     (error 'nth-element
       "List ~s does not have ~s elements.~%" lst n)))
 ```
+
+Exercise 1.8
+============
+This time in Idris:
+```idris
+remove_until : String -> (List String) -> (List String)
+-- usage: (remove_until s los) returns the tail of los
+--        after the first occurence of s.
+remove_until s [] = []
+remove_until s (x :: xs) = 
+    if x == s
+        then xs
+        else remove_until s xs
+```
