@@ -182,3 +182,8 @@ Exercise 1.10
 =============
 Since they explicitily say that they mean "inclusive or", I assume the other meaning they are alluding to is "exclusive or" (xor).
 Which would mean something like "either but not both".
+
+Exercise 1.11
+=============
+ALthough recursion in subst-in-exp is not on a smaller substructure, it calls subst, which only recurs on smaller substructure.
+Every path through both mutually recursive procedures eventually leads to smaller substructure, so recursion is guaranteed to halt.
