@@ -162,3 +162,18 @@ remove_until s (x :: xs) =
         then xs
         else remove_until s xs
 ```
+
+Exercise 1.9
+============
+```
+remove : String -> (List String) -> (List String)
+-- usage: (remove_first s los) returns a list with
+--        the same elements arrenged in the same
+--        order as los, except that all occurrences 
+--        of the string s is removed.
+remove s [] = []
+remove s (x :: xs) = 
+    if x == s
+        then remove s xs
+        else x :: remove s xs
+```
