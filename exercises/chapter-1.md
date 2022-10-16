@@ -219,3 +219,7 @@ Exercise 1.14
 2. if 0 < n < len, the partial sum is the element at index 0 plus the partial sum of n-1.
 3. if the list is empty 0 < n < len can't be satisfied.
 Hmm.. I don't think that's actually a proof, but rather the implementation in prose.
+
+Exercises 1.15 ...
+==================
+Find the remaining exercises in `chapter01_exercises.idr`.
