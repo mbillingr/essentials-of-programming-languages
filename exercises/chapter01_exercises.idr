@@ -8,6 +8,11 @@ mutual
     Slist : Type
     Slist = List Sexpr
 
+Eq Sexpr where
+    S a == S b = a == b
+    L a == L b = a == b
+    _ == _ = False
+
 
 -- Exercise 1.15
 
@@ -56,3 +61,21 @@ list_set : (lst : List t) -> (n : Nat) -> (x : t) -> List t
 list_set [] _ _ = []
 list_set (_ :: xs) 0 x = x :: xs
 list_set (y :: xs) (S k) x = y :: (list_set xs k x)
+
+
+-- Exercise 1.20
+
+mutual
+    ||| Returns the number of occurences of @s in @slist.
+    count_occurrences : (s : Sexpr) -> (slist : Slist) -> Nat
+    count_occurrences s [] = 0
+    count_occurrences s (x :: xs) = (count_sexpr_occurrences s x) + (count_occurrences s xs)
+
+    ||| Returns the number of occurences of @s in @sexpr.
+    count_sexpr_occurrences : (s : Sexpr) -> (sexpr : Sexpr) -> Nat
+    count_sexpr_occurrences s sexpr = 
+        if s == sexpr 
+        then 1
+        else case sexpr of
+            (S x) => 0
+            (L xs) => count_occurrences s xs
