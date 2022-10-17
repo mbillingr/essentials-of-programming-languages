@@ -47,3 +47,12 @@ swapper s1 s2 ((S x) :: xs) =
         (S s1) :: swapper s1 s2 xs
     else 
         (S x) :: swapper s1 s2 xs
+
+
+-- Exercise 1.19
+
+||| Returns a list like @lst, except that the @n-th element is @x.
+list_set : (lst : List t) -> (n : Nat) -> (x : t) -> List t
+list_set [] _ _ = []
+list_set (_ :: xs) 0 x = x :: xs
+list_set (y :: xs) (S k) x = y :: (list_set xs k x)
