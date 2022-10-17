@@ -104,3 +104,14 @@ filter_in pred (x :: xs) =
     let fxs = filter_in pred xs in
         if pred x then x :: fxs
                   else fxs
+
+
+-- Exercise 1.23
+
+||| Returns the 0-based position of the first element of @lst that satisfies the predicate @pred
+list_index : (pred : (t -> Bool)) -> (lst : List t) -> Maybe Nat
+list_index pred [] = Nothing
+list_index pred (x :: xs) = 
+    if pred x 
+    then Just 0 
+    else map (+ 1) (list_index pred xs)
