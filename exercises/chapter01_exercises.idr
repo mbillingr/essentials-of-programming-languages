@@ -115,3 +115,11 @@ list_index pred (x :: xs) =
     if pred x 
     then Just 0 
     else map (+ 1) (list_index pred xs)
+
+
+-- Exercise 1.24
+
+||| Returns False if any element of @lst fails to satisfies @pred, and returns True otherwise.
+is_every : (pred : (t -> Bool)) -> (lst : List t) -> Bool
+is_every pred [] = True
+is_every pred (x :: xs) = (pred x) && (is_every pred xs)
