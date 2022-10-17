@@ -79,3 +79,17 @@ mutual
         else case sexpr of
             (S x) => 0
             (L xs) => count_occurrences s xs
+
+
+-- Exercise 1.21
+
+||| Adds a prefix to each element of a list.
+add_prefix : t -> List t -> List (Vect 2 t)
+add_prefix x [] = []
+add_prefix x (y :: ys) = [x, y] :: add_prefix x ys
+
+||| Returns the cartesian product of two lists
+product : List t -> List t -> List (Vect 2 t)
+product [] _ = []
+product _ [] = []
+product (x :: xs) ys = (add_prefix x ys) ++ product xs ys
