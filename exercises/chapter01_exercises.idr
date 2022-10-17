@@ -93,3 +93,14 @@ product : List t -> List t -> List (Vect 2 t)
 product [] _ = []
 product _ [] = []
 product (x :: xs) ys = (add_prefix x ys) ++ product xs ys
+
+
+-- Exercise 1.22
+
+||| Returns the list of elements in @lst that satisfy predicate @pred
+filter_in : (pred : (t -> Bool)) -> (lst : List t) -> List t
+filter_in pred [] = []
+filter_in pred (x :: xs) = 
+    let fxs = filter_in pred xs in
+        if pred x then x :: fxs
+                  else fxs
