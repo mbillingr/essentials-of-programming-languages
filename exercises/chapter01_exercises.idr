@@ -123,3 +123,11 @@ list_index pred (x :: xs) =
 is_every : (pred : (t -> Bool)) -> (lst : List t) -> Bool
 is_every pred [] = True
 is_every pred (x :: xs) = (pred x) && (is_every pred xs)
+
+
+-- Exercise 1.25
+
+||| Returns True if any element of @lst satisfies @pred, and returns False otherwise.
+does_exist : (pred : (t -> Bool)) -> (lst : List t) -> Bool
+does_exist pred [] = False
+does_exist pred (x :: xs) = (pred x) || (is_every pred xs)
