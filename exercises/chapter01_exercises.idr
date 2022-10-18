@@ -1,4 +1,5 @@
 
+import Data.Nat
 import Data.Vect
 
 
@@ -149,3 +150,20 @@ flatten : Slist -> List String
 flatten [] = []
 flatten ((S x) :: xs) = x :: flatten xs
 flatten ((L ys) :: xs) = flatten ys ++ flatten xs
+
+
+-- Exercise 1.28
+-- TODO: It would be nice if I'd also be able to prove that merging two sorted lists results in another sorted list...
+
+||| Proof that one of the branches in merge indeed results in e Vect of correct length (the other branches don't need a proof)
+mergeProof : Vect (S (S (plus len_1 len))) Int -> Vect (S (plus len_1 (S len))) Int
+mergeProof (z::zs) = z :: (rewrite sym (plusSuccRightSucc len_1 len) in zs)
+
+||| Merge two sorted lists to produce another sorted list
+merge : (Vect n Int) -> (Vect m Int) -> (Vect (n + m) Int)
+merge [] ys = ys
+merge (x :: xs) [] = x :: Main.merge xs []
+merge (x :: xs) (y :: ys) = 
+    if y < x 
+    then mergeProof (y :: Main.merge (x :: xs) ys)
+    else x :: Main.merge xs (y :: ys)
