@@ -140,3 +140,12 @@ up : (lst : Slist) -> Slist
 up [] = []
 up ((L ys) :: xs) = ys ++ up xs
 up (x :: xs) = x :: up xs
+
+
+-- Exercise 1.27
+
+||| Returns a list of the symbols contained in @slist in the order in which they would occur when printing @slist
+flatten : Slist -> List String
+flatten [] = []
+flatten ((S x) :: xs) = x :: flatten xs
+flatten ((L ys) :: xs) = flatten ys ++ flatten xs
