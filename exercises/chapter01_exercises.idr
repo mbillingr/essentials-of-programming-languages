@@ -131,3 +131,12 @@ is_every pred (x :: xs) = (pred x) && (is_every pred xs)
 does_exist : (pred : (t -> Bool)) -> (lst : List t) -> Bool
 does_exist pred [] = False
 does_exist pred (x :: xs) = (pred x) || (is_every pred xs)
+
+
+-- Exercise 1.26
+
+||| Remove a pair of parentheses from each top-level element of @lst
+up : (lst : Slist) -> Slist
+up [] = []
+up ((L ys) :: xs) = ys ++ up xs
+up (x :: xs) = x :: up xs
