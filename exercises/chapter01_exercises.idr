@@ -167,3 +167,39 @@ merge (x :: xs) (y :: ys) =
     if y < x 
     then mergeProof (y :: Main.merge (x :: xs) ys)
     else x :: Main.merge xs (y :: ys)
+
+
+-- Exercise 1.29
+
+floor_half : Nat -> Nat
+floor_half 0 = 0
+floor_half (S 0) = 0
+floor_half (S (S k)) = S (floor_half k)
+
+ceil_half : Nat -> Nat
+ceil_half 0 = 0
+ceil_half (S 0) = 1
+ceil_half (S (S k)) = S (ceil_half k)
+
+||| Proof that ceil_half and floor_half add up to the original number
+halvesAddUp : (n : Nat) -> n = ((ceil_half n) + (floor_half n))
+halvesAddUp 0 = Refl
+halvesAddUp (S 0) = Refl
+halvesAddUp (S (S k)) = 
+    rewrite sym (plusSuccRightSucc (ceil_half k) (floor_half k)) in 
+    rewrite eqSucc k ((ceil_half k) + (floor_half k)) (halvesAddUp k) in 
+        Refl
+
+||| Returns two lists one containing every even-indexed element of the input list, the other every odd-indexed element
+split : (Vect n t) -> ((Vect (ceil_half n) t), (Vect (floor_half n) t))
+split [] = ([], [])
+split (x :: []) = ([x], [])
+split (x :: (y :: xs)) = let (a, b) = split xs in (x :: a, y :: b)
+
+||| Returns a list of the elements in @loi in ascending order
+sort : (Vect n Int) -> (Vect n Int)
+sort [] = []
+sort [x] = [x]
+sort xs = 
+    let (a, b) = split xs in 
+        rewrite halvesAddUp n in (Main.merge (sort a) (sort b))
