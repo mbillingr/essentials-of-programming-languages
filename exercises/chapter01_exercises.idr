@@ -1,4 +1,5 @@
 
+import Data.List
 import Data.Nat
 import Data.Vect
 
@@ -203,3 +204,17 @@ sort [x] = [x]
 sort xs = 
     let (a, b) = split xs in 
         rewrite halvesAddUp n in (Main.merge (sort a) (sort b))
+
+
+-- Exercise 1.30
+
+||| Returns a list of elements sorted by the predicate
+sort_predicate : (t -> t -> Bool) -> List t -> List t
+sort_predicate pred [] = []
+sort_predicate pred [x] = [x]
+sort_predicate pred (pivot :: xs) = 
+    (sort_predicate pred 
+        (filter (not . (pred pivot)) xs)) 
+    ++ [pivot] 
+    ++ (sort_predicate pred 
+        (filter (pred pivot) xs))
