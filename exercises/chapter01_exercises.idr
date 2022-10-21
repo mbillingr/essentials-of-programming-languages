@@ -218,3 +218,30 @@ sort_predicate pred (pivot :: xs) =
     ++ [pivot] 
     ++ (sort_predicate pred 
         (filter (pred pivot) xs))
+
+
+-- Exercise 1.31
+
+data BinTree = Leaf Int
+             | Node String BinTree BinTree
+
+is_leaf : BinTree -> Bool
+is_leaf (Leaf _) = True
+is_leaf (Node _ _ _) = False
+
+
+-- Exercise 1.32
+
+double_tree : BinTree -> BinTree
+double_tree (Leaf x) = Leaf (x + x)
+double_tree (Node s l r) = Node s (double_tree l) (double_tree r)
+
+
+-- Exercise 1.33
+
+mark_leaves_with_red_depth : BinTree -> BinTree
+mark_leaves_with_red_depth = mark 0 where
+    mark : Int -> BinTree -> BinTree
+    mark d (Leaf _) = Leaf d
+    mark d (Node "red" l r) = Node "red" (mark 0 l) (mark 0 r)
+    mark d (Node s l r) = Node s (mark (d+1) l) (mark (d+1) r)
