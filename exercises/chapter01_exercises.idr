@@ -245,3 +245,20 @@ mark_leaves_with_red_depth = mark 0 where
     mark d (Leaf _) = Leaf d
     mark d (Node "red" l r) = Node "red" (mark 0 l) (mark 0 r)
     mark d (Node s l r) = Node s (mark (d+1) l) (mark (d+1) r)
+
+
+-- Exercise 1.34
+-- It would be interesting to see if it is possible to enforce correctness of the BST using types/proofs
+
+data BinSearchTree = Empty | Entry Int BinSearchTree BinSearchTree
+
+data Direction = Left | Right
+
+path : Int -> BinSearchTree -> List Direction
+path _ Empty = []
+path k (Entry x l r) = 
+    if k == x
+    then []
+    else if k < x
+         then Left :: path k l
+         else Right :: path k r
