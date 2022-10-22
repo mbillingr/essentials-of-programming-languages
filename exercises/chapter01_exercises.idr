@@ -273,3 +273,15 @@ number_leaves tree = fst (numl tree 0) where
     numl (Node s l r) n = 
         let (tl, nl) = numl l n in
         let (tr, nr) = numl r nl in ((Node s tl tr), nr)
+
+
+-- Exercise 1.36
+
+g : (Nat, t) -> (List (Nat, t)) -> List (Nat, t)
+g nx xs = nx :: (map incfst xs) where
+    incfst : (Nat, t) -> (Nat, t)
+    incfst (n, r) = (n+1, r)
+
+number_elements : (List t) -> (List (Nat, t))
+number_elements [] = []
+number_elements (x :: xs) = g (0, x) (number_elements xs)
