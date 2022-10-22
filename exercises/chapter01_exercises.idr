@@ -262,3 +262,14 @@ path k (Entry x l r) =
     else if k < x
          then Left :: path k l
          else Right :: path k r
+
+
+-- Exercise 1.35
+
+number_leaves : BinTree -> BinTree
+number_leaves tree = fst (numl tree 0) where
+    numl : BinTree -> Int -> (BinTree, Int)
+    numl (Leaf _) n = ((Leaf n), n + 1)
+    numl (Node s l r) n = 
+        let (tl, nl) = numl l n in
+        let (tr, nr) = numl r nl in ((Node s tl tr), nr)
