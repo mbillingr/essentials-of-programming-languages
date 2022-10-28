@@ -113,3 +113,9 @@ apply_env1 env = env
 -- Maybe the original env in that we started the search? In that case, I would capture the env passed to (apply-env) in 
 -- the closure of an inner recursion helper function. Then it would be available when producing the error message.
 -- It does not seem worth to actually implement that.
+
+-- Exercise 2.8
+
+is_empty : Env a -> Bool
+is_empty Empty = True
+is_empty _ = False
