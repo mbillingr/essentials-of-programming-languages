@@ -108,3 +108,8 @@ apply_env1 env = env
 -- Representing the environment with functions is pretty much the most interesting implementation I can come up with.
 -- Other solutions would be variants of  the a-list implementation, or maybe using a mutable key/value store such as a hashmap... I'll spare myself the effort.
 
+-- Exercise 2.7
+-- I'm not sure what a more informative error maessage would contain. 
+-- Maybe the original env in that we started the search? In that case, I would capture the env passed to (apply-env) in 
+-- the closure of an inner recursion helper function. Then it would be available when producing the error message.
+-- It does not seem worth to actually implement that.
