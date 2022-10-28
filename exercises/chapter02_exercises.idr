@@ -114,8 +114,19 @@ apply_env1 env = env
 -- the closure of an inner recursion helper function. Then it would be available when producing the error message.
 -- It does not seem worth to actually implement that.
 
+
 -- Exercise 2.8
 
 is_empty : Env a -> Bool
 is_empty Empty = True
 is_empty _ = False
+
+
+-- Exercise 2.9
+
+has_binding : Env a -> String -> Bool
+has_binding Empty _ = False
+has_binding (Entry var _ env) searchvar = 
+    if var == searchvar
+    then True
+    else has_binding env searchvar
