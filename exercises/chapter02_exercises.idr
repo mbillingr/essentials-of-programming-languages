@@ -176,3 +176,7 @@ r_apply_env (Rib vars vals env) searchvar =
 r_extend_env_many : Vect n String -> Vect n a -> Ribcage a -> Ribcage a
 r_extend_env_many [] [] env = env
 r_extend_env_many vars vals env = Rib (toList vars) (toList vals) env
+
+
+-- Exercise 2.12
+-- See exercise02_12.py
