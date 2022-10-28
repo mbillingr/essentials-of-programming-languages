@@ -68,4 +68,43 @@ diff_tree_plus x y = Diff x (negation y)
 (top [f])          = v if [f] = (push _ v), #f otherwise
 (empty-stack? [f]) = #t if [f] == [0], #f otherwise
  -}
- 
+
+
+-- Exercise 2.5
+
+data Env a = Empty | Entry String a (Env a)
+
+empty_env : Env a
+empty_env = Empty
+
+extend_env : String -> a -> (Env a) -> (Env a)
+extend_env = Entry
+
+apply_env : (Env a) -> String -> (Maybe a)
+apply_env Empty searchvar = Nothing
+apply_env (Entry var val e) searchvar =
+    if var == searchvar
+    then Just val
+    else apply_env e searchvar
+
+-- Exercise 2.6
+
+Env1 : Type -> Type
+Env1 a = String -> Maybe a
+
+empty_env1 : Env1 a
+empty_env1 var = Nothing
+
+extend_env1 : String -> a -> (Env1 a) -> (Env1 a)
+extend_env1 var val env = lookup where
+    lookup : Env1 a
+    lookup searchvar = if var == searchvar
+                       then Just val
+                       else env searchvar
+
+apply_env1 : Env1 a -> String -> Maybe a
+apply_env1 env = env
+
+-- Representing the environment with functions is pretty much the most interesting implementation I can come up with.
+-- Other solutions would be variants of  the a-list implementation, or maybe using a mutable key/value store such as a hashmap... I'll spare myself the effort.
+
