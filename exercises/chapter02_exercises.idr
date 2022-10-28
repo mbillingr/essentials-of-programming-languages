@@ -1,4 +1,5 @@
 
+import Data.Vect
 
 
 -- Exercise 2.1
@@ -119,7 +120,7 @@ apply_env2 [] _ = Nothing
 apply_env2 ((var, val) :: env) searchvar = if var == searchvar
                                            then Just val
                                            else apply_env2 env searchvar
-                                           
+
 -- Representing the environment with functions is pretty much the most interesting implementation I can come up with.
 -- Other solutions would be variants of  the a-list implementation, or maybe using a mutable key/value store such as a hashmap... I'll spare myself the effort.
 
@@ -145,3 +146,10 @@ has_binding (Entry var _ env) searchvar =
     if var == searchvar
     then True
     else has_binding env searchvar
+
+
+-- Exercise 2.10
+
+extend_env_many : Vect n String -> Vect n a -> Env a -> Env a
+extend_env_many [] [] env = env
+extend_env_many (var :: vars) (val :: vals) env = extend_env var val (extend_env_many vars vals env)
