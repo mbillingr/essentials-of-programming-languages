@@ -178,5 +178,8 @@ r_extend_env_many [] [] env = env
 r_extend_env_many vars vals env = Rib (toList vars) (toList vals) env
 
 
--- Exercise 2.12
--- See exercise02_12.py
+-- Exercise 2.12 - 2.14
+-- See exercise02_x.py
+
+-- Exercise 2.15
+-- See exercise02_15.scm
