@@ -105,6 +105,21 @@ extend_env1 var val env = lookup where
 apply_env1 : Env1 a -> String -> Maybe a
 apply_env1 env = env
 
+Env2 : Type -> Type
+Env2 a = List (String, a)
+
+empty_env2 : Env2 a
+empty_env2 = []
+
+extend_env2 : String -> a -> (Env2 a) -> (Env2 a)
+extend_env2 var val env = (var, val) :: env
+
+apply_env2 : Env2 a -> String -> Maybe a
+apply_env2 [] _ = Nothing
+apply_env2 ((var, val) :: env) searchvar = if var == searchvar
+                                           then Just val
+                                           else apply_env2 env searchvar
+                                           
 -- Representing the environment with functions is pretty much the most interesting implementation I can come up with.
 -- Other solutions would be variants of  the a-list implementation, or maybe using a mutable key/value store such as a hashmap... I'll spare myself the effort.
 
