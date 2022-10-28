@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "essentials-of-programming-languages"
+version = "0.1.0"
+description = ""
+authors = ["Martin Billinger <mbillingr@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "essentials_of_programming_languages"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+matplotlib = "^3.6.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

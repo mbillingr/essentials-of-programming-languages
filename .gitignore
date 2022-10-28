@@ -1,1 +1,6 @@
+# Idris
 **/*build/ttc
+
+# Python
+*.pyc
+
