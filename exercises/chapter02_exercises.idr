@@ -58,3 +58,14 @@ predecessor (Diff x y) = Diff x (successor y)
 
 diff_tree_plus : DiffTree -> DiffTree -> DiffTree
 diff_tree_plus x y = Diff x (negation y)
+
+
+-- Exercise 2.4
+{-
+(empty-stack)      = [0]
+(push [f] v)       = [g], where (top [g]) = v
+(pop [f])          = [g], so that (pop (push [g] _)) = g
+(top [f])          = v if [f] = (push _ v), #f otherwise
+(empty-stack? [f]) = #t if [f] == [0], #f otherwise
+ -}
+ 
