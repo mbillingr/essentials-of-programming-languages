@@ -1,4 +1,5 @@
 
+import Data.List
 import Data.Vect
 
 
@@ -153,3 +154,25 @@ has_binding (Entry var _ env) searchvar =
 extend_env_many : Vect n String -> Vect n a -> Env a -> Env a
 extend_env_many [] [] env = env
 extend_env_many (var :: vars) (val :: vals) env = extend_env var val (extend_env_many vars vals env)
+
+
+-- Exercise 2.11
+
+data Ribcage a = REmpty | Rib (List String) (List a) (Ribcage a)
+
+r_empty_env : Ribcage a
+r_empty_env = REmpty
+
+r_extend_env : String -> a -> (Ribcage a) -> (Ribcage a)
+r_extend_env var val env = Rib [var] [val] env
+
+r_apply_env : Ribcage a -> String -> Maybe a
+r_apply_env REmpty _ = Nothing
+r_apply_env (Rib vars vals env) searchvar = 
+    case (find ((== searchvar) . fst) (zip vars vals)) of
+        Nothing => r_apply_env env searchvar
+        (Just (_, val)) => Just val
+
+r_extend_env_many : Vect n String -> Vect n a -> Ribcage a -> Ribcage a
+r_extend_env_many [] [] env = env
+r_extend_env_many vars vals env = Rib (toList vars) (toList vals) env
