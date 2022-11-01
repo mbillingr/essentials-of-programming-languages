@@ -2,6 +2,10 @@
 
 ; LET lang with ...
 ;   - minus operator
+;   - arithmetic operators
+;   - comparison operators
+;   - list processing operators
+;   - list construction operator
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)

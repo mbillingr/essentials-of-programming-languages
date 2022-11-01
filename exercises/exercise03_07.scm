@@ -2,6 +2,7 @@
 
 ; LET lang with ...
 ;   - minus operator
+;   - arithmetic operators
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
