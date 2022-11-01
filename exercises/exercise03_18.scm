@@ -9,6 +9,7 @@
 ;   - cond expression
 ;   - print operation (whose side effect and concrete return value can't be expressed in the grammar)
 ;   - multiple let and let*
+;   - list unpacking
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -86,6 +87,9 @@
     (expression
       ("list" "(" (separated-list expression ",") ")")
       list-exp) 
+    (expression
+      ("unpack" (arbno identifier) "=" expression "in" expression)
+      unpack-exp)
 
     (expression
       ("print" "(" expression ")")
@@ -173,6 +177,10 @@
     (list-exp (exp*)
       (let ((val* (map (lambda (exp) (value-of exp env)) exp*)))
         (list-val val*)))
+    (unpack-exp (var* exp1 body)
+      (let* ((val1 (value-of exp1 env))
+             (lst1 (expval->list val1)))
+        (value-of-unpack var* lst1 body env)))
     (print-exp (exp)
       (cases expval (value-of exp env)
         (num-val (num) (display num))
@@ -219,6 +227,14 @@
          (value-of (car consequence*) env))
         (else (value-of-cond (cdr condition*) (cdr consequence*) env))))
 
+(define (value-of-unpack var* val* body env)
+  (cond ((and (null? var*) (null? val*))
+         (value-of body env))
+        ((or (null? var*) (null? val*))
+         (report-unpack-mismatch var* val*))
+        (else 
+          (value-of-unpack (cdr var*) (cdr val*) body
+            (extend-env (car var*) (car val*) env)))))
 
 
 (define-datatype expval expval?
@@ -248,6 +264,9 @@
 
 (define (report-expval-extractor-error kind val)
   (eopl:error kind "expected ~s but got value ~s" kind val))
+
+(define (report-unpack-mismatch var* val*)
+  (eopl:error 'value-of-unpack "wrong number of values to unpack ~s / ~s" var* val*))
 
 
 (define-datatype env-exp env-exp?
@@ -389,6 +408,12 @@
          y = -(x,2) 
      in -(x,y)"
   (make-val 2))
+
+(assert-eval
+  "let u = 7
+   in unpack x y = cons(u,cons(3,emptylist))
+      in -(x,y)"
+  (make-val 4))
 
 (newline)
 (display "OK")
