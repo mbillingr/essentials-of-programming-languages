@@ -2,7 +2,7 @@
 
 ; PROC lang with ...
 ;   - multiple arguments
-;   - unified calls (implement builtins as special cases of procedure calls)
+;   - unified calls (implement builtins as special cases of procedure calls; modified grammar to accept - as identifier)
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
