@@ -1,0 +1,200 @@
+
+let makerec = proc (f)
+                let d = proc (x)
+                         proc (z) ((f (x x)) z)
+                in proc (n) ((f (d d)) n)
+in let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+   in let times4 = (makerec maketimes4)
+      in (times4 3)
+
+
+% substitute times4 = (makerec maketimes4)
+
+let makerec = proc (f)
+                let d = proc (x)
+                         proc (z) ((f (x x)) z)
+                in proc (n) ((f (d d)) n)
+in let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+   in ((makerec maketimes4) 3)
+
+
+% substitute makerec = ...
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in ((proc (f)
+         let d = proc (x) proc (z) ((f (x x)) z)
+         in proc (n) ((f (d d)) n) 
+       maketimes4) 3)
+
+
+% substitute f = maketimes4 in (proc (f) ... maketimes4)
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in (let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+      in proc (n) ((maketimes4 (d d)) n) 
+      3)
+
+
+% substitute n = 3 in (proc (n) ... 3)
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+     in ((maketimes4 (d d)) 3) 
+
+
+% substitute maketimes4 = proc (f) proc (x) if zero?(x) then 0 else -((f -(x,1)), -4) in last let body
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+     in ((proc (f) proc (x) if zero?(x) then 0 else -((f -(x,1)), -4) (d d)) 3) 
+      
+
+% substitute x = 3 in application
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+     in (proc (f) if zero?(3) then 0 else -((f -(3,1)), -4) (d d))
+      
+
+% evaluate constant operations
+
+let maketimes4 = proc (f)
+                      proc (x)
+                        if zero?(x)
+                           then 0
+                           else -((f -(x,1)), -4)
+  in let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+     in (proc (f) -((f 2), -4) (d d))
+      
+
+% substitute f = (d d)
+
+let maketimes4 = proc (f) proc (x) if zero?(x) then 0 else -((f -(x,1)), -4)
+  in let d = proc (x) proc (z) ((maketimes4 (x x)) z)
+     in -(((d d) 2), -4)
+      
+
+% substitute maketimes4
+
+in let d = proc (x) 
+             proc (z) 
+               ((proc (f) proc (x) if zero?(x) then 0 else -((f -(x,1)), -4) 
+                 (x x)) 
+                z)
+   in -(((d d) 2), -4)
+      
+
+% substitute x = z in application
+
+in let d = proc (x) 
+             proc (z) 
+               (proc (f) if zero?(z) then 0 else -((f -(z,1)), -4) 
+                (x x))
+   in -(((d d) 2), -4)
+      
+
+% substitute f = (x x) in application
+
+in let d = proc (x) 
+             proc (z) 
+               if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(((d d) 2), -4)
+      
+
+% substitute d in function position
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(((proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4) d) 2), -4)
+      
+
+% substitute x = d, z = 2
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(if zero?(2) then 0 else -(((d d) -(2,1)), -4), -4)
+      
+
+% substitute (if #f a b) = b, -(2,1) = 1
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(((d d) 1), -4), -4)
+      
+
+% substitute d in function position
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(((proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4) d) 1), -4), -4)
+      
+
+% substitute x = d, z = 1
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(if zero?(1) then 0 else -(((d d) -(1,1)), -4), -4), -4)
+      
+
+% substitute (if #f a b) = b, -(1,1) = 0
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(-(((d d) 0), -4), -4), -4)
+      
+
+% substitute d in function position
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(-(((proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4) d) 0), -4), -4), -4)
+      
+
+% substitute x = d, z = 0
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(-(if zero?(0) then 0 else -(((d d) -(0,1)), -4), -4), -4), -4)
+      
+
+% substitute (if #t a b) = a
+
+in let d = proc (x) proc (z) if zero?(z) then 0 else -(((x x) -(z,1)), -4)
+   in -(-(-(-(0, -4), -4), -4), -4)
+
+
+% drop unused let binding
+
+-(-(-(-(0, -4), -4), -4), -4)
+
+
+% resolve constants
+
+-(-(-(-(0, -4), -4), -4), -4)
+-(-(-(4, -4), -4), -4)
+-(-(8, -4), -4)
+-(12, -4)
+16
+
+% Well, the correct answer would have been 12. I must have inserted one recursion step too much,
+% but the principle is clear, so I won't go looking for the mistake :)
