@@ -1,7 +1,7 @@
 #lang eopl
 
 ; LETREC lang with ...
-;   - multiple arguments
+;   - mutual recursion
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -35,11 +35,15 @@
       let-exp)
 
     (expression
-      ("letrec" identifier "(" (arbno identifier) ")" "=" expression "in" expression)
+      ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression)
       letrec-exp)
 
     (expression
-      ("(" expression (arbno expression) ")")
+      ("proc" "(" identifier ")" expression)
+      proc-exp)
+
+    (expression
+      ("(" expression expression ")")
       call-exp)))
 
 
@@ -88,13 +92,15 @@
       (let ((val1 (value-of exp1 env)))
         (value-of body
           (extend-env var val1 env))))
-    (letrec-exp (proc-name bound-var* proc-body letrec-body)
+    (letrec-exp (proc-name* bound-var* proc-body* letrec-body)
       (value-of letrec-body 
-                (extend-env-rec proc-name bound-var* proc-body env)))
-    (call-exp (rator rand*)
+                (extend-env-rec proc-name* bound-var* proc-body* env)))
+    (proc-exp (var body)
+      (proc-val (procedure var body env)))
+    (call-exp (rator rand)
       (let ((proc (expval->proc (value-of rator env)))
-            (arg* (map (lambda (r) (value-of r env)) rand*)))
-        (apply-procedure proc arg*)))))
+            (arg (value-of rand env)))
+        (apply-procedure proc arg)))))
 
 (define-datatype expval expval?
   (num-val (num number?))
@@ -123,24 +129,18 @@
 (define (proc? val)
   (procedure? val))
 
-(define (procedure var* body env)
-  (lambda (val*)
-    (value-of body (extend-env* var* val* env))))
+(define (procedure var body env)
+  (lambda (val)
+    (value-of body (extend-env var val env))))
 
-(define (apply-procedure proc1 val*)
-  (proc1 val*))
+(define (apply-procedure proc1 val)
+  (proc1 val))
 
 
 (define-datatype environment environment?
   (empty-env)
   (extend-env (var symbol?) (val expval?) (env environment?))
-  (extend-env-rec (p-name symbol?) (b-var* (list-of symbol?)) (body expression?) (env environment?)))
-
-(define (extend-env* vars vals env)
-  (if (null? vars)
-      env
-      (extend-env* (cdr vars) (cdr vals)
-        (extend-env (car vars) (car vals) env))))
+  (extend-env-rec (p-name (list-of symbol?)) (b-var (list-of symbol?)) (body (list-of expression?)) (env environment?)))
 
 (define (apply-env env search-var)
   (cases environment env
@@ -150,20 +150,23 @@
       (if (eqv? var search-var) 
         val 
         (apply-env parent search-var)))
-    (extend-env-rec (p-name b-var* p-body parent)
-      (if (eqv? p-name search-var)
-          (proc-val (procedure b-var* p-body env))
-          (apply-env parent search-var)))))
+    (extend-env-rec (p-name* b-var* p-body* parent)
+      (apply-env-rec p-name* b-var* p-body* env parent search-var))))
+
+(define (apply-env-rec p-name* b-var* p-body* env parent search-var)
+  (cond ((null? p-name*)
+         (apply-env parent search-var))
+        ((eqv? (car p-name*) search-var)
+         (proc-val (procedure (car b-var*) (car p-body*) env)))
+        (else 
+         (apply-env-rec (cdr p-name*) (cdr b-var*) (cdr p-body*) env parent search-var))))
 
 (define (report-no-binding-found var)
   (eopl:error 'apply-env "No binding for ~s" var))
 
 
 (define (init-env)
-  (extend-env 'i (num-val 1)
-    (extend-env 'v (num-val 5)
-      (extend-env 'x (num-val 10)
-        (empty-env)))))
+  (empty-env))
 
 
 (define (assert-eval src expected-val)
@@ -200,11 +203,17 @@
 (assert-eval
   "let x = 123 in x"
   (num-val 123))
-  
+
 (assert-eval
-  "letrec times(x y) = if zero?(x) then 0 else -((times -(x,1) y), -(0,y))
-   in (times 6 3)"
-  (num-val 18))
+  "let x = 123 in (proc (x) x 42)"
+  (num-val 42))
+
+(assert-eval
+  "letrec 
+     even(x) = if zero?(x) then 1 else (odd -(x,1))
+     odd(x) = if zero?(x) then 0 else (even -(x,1))
+   in (odd 13)"
+  (num-val 1))
 
 (newline)
 (display "OK")
