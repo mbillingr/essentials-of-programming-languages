@@ -1,0 +1,3 @@
+- (newref val) is O(n) because it walks the entire store to append the value to the end.
+- (deref ref) is O(n) because it performs linear search in the store.
+- (setref ref val) is O(n) because it performs linear search and rebuilds the head of the store.
