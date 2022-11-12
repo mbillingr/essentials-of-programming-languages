@@ -1,6 +1,7 @@
 #lang eopl
 
-; EXPLICIT-REFS lang 
+; EXPLICIT-REFS lang with ...
+;   - begin
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -55,7 +56,11 @@
 
     (expression 
       ("setref" "(" expression "," expression ")")
-      setref-exp)))
+      setref-exp)
+
+    (expression 
+      ("begin" expression (arbno expression) "end")
+      begin-exp)))
 
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -125,7 +130,12 @@
         (let ((val2 (value-of exp2 env)))
           (begin
             (setref! ref val2)
-            (num-val 23)))))))
+            (num-val 23)))))
+    (begin-exp (first rest)
+      (let ((val1 (value-of first env)))
+        (if (null? rest)
+            val1
+            (value-of (begin-exp (car rest) (cdr rest)) env))))))
 
 (define-datatype expval expval?
   (num-val (num number?))
@@ -304,6 +314,14 @@
      even(x) = if zero?(x) then 1 else (odd -(x,1))
    in (odd 13)"
   (num-val 1))
+
+(assert-eval
+  "let x = newref(1)
+   in begin
+        setref(x,2)
+        deref(x)
+      end"
+  (num-val 2))
 
 (newline)
 (display "OK")
