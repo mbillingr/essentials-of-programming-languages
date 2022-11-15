@@ -45,6 +45,10 @@
       ("(" expression expression ")")
       call-exp)
 
+    (expression 
+      ("begin" expression (arbno expression) "end")
+      begin-exp)
+
     (expression
       ("set" identifier "=" expression)
       assign-exp)))
@@ -105,6 +109,11 @@
       (let ((proc (expval->proc (value-of rator env)))
             (arg (value-of rand env)))
         (apply-procedure proc arg)))
+    (begin-exp (first rest)
+      (let ((val1 (value-of first env)))
+        (if (null? rest)
+            val1
+            (value-of (begin-exp (car rest) (cdr rest)) env))))
     (assign-exp (var exp1)
       (begin
         (setref!
@@ -289,6 +298,11 @@
      even(x) = if zero?(x) then 1 else (odd -(x,1))
    in (odd 13)"
   (num-val 1))
+
+(assert-eval
+  "let x = 123 in begin set x = 42 x end"
+  (num-val 42))
+
 
 (newline)
 (display "OK")
