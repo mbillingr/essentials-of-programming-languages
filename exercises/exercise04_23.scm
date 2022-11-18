@@ -2,6 +2,7 @@
 
 ; IMPLICIT-REFS lang 
 ;  - statement oriented
+;  - read statements
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
