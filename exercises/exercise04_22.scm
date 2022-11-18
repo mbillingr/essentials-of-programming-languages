@@ -1,6 +1,7 @@
 #lang eopl
 
 ; IMPLICIT-REFS lang 
+;  - statement oriented
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
