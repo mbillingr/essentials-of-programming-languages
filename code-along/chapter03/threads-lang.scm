@@ -55,7 +55,19 @@
 
     (expression
       ("spawn" "(" expression ")")
-      spawn-exp)))
+      spawn-exp)
+
+    (expression
+      ("mutex" "(" ")")
+      mutex-exp)
+
+    (expression
+      ("wait" "(" expression ")")
+      wait-exp)
+
+    (expression
+      ("signal" "(" expression ")")
+      signal-exp)))
 
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -71,7 +83,7 @@
 
 
 (define (run source)
-  (value-of-program 2 (scan&parse source)))
+  (value-of-program 1 (scan&parse source)))
 
 (define (value-of-program timeslice pgm)
   (initialize-store!)
@@ -102,17 +114,33 @@
     (call-exp (rator rand)
       (value-of/k rator env (rator-cont rand env cont)))
     (begin-exp (first rest)
-      (value-of/k first env (begin-cont rest env cont)))
+      (if (null? rest)
+          (value-of/k first env cont)    
+          (value-of/k 
+            (call-exp
+              (proc-exp
+                (fresh-identifier 'dummy)
+                (begin-exp (car rest) (cdr rest)))
+              first)
+            env
+            cont)))
     (assign-exp (var exp1)
       (value-of/k exp1 env (set-rhs-cont var env cont)))
     (spawn-exp (exp1)
-      (value-of/k exp1 env (spawn-cont cont)))))
+      (value-of/k exp1 env (spawn-cont cont)))
+    (mutex-exp ()
+      (apply-cont cont (mutex-val (new-mutex))))
+    (wait-exp (exp1)
+      (value-of/k exp1 env (wait-cont cont)))
+    (signal-exp (exp1)
+      (value-of/k exp1 env (signal-cont cont)))))
 
 (define-datatype expval expval?
   (num-val (num number?))
   (bool-val (bool boolean?))
   (proc-val (proc proc?))
-  (ref-val (ref reference?)))
+  (ref-val (ref reference?))
+  (mutex-val (mut mutex?)))
 
 (define (expval->num val)
   (cases expval val
@@ -134,6 +162,11 @@
     (ref-val (ref) ref)
     (else (report-expval-extractor-error 'ref val))))
 
+(define (expval->mutex val)    
+  (cases expval val
+    (mutex-val (ref) ref)
+    (else (report-expval-extractor-error 'mutex val))))
+
 (define (report-expval-extractor-error kind val)
   (eopl:error kind "expected ~s but got value ~s" kind val))
 
@@ -147,6 +180,15 @@
 
 (define (apply-procedure/k proc1 val cont)
   (proc1 val cont))
+
+
+(define-datatype mutex mutex?
+  (a-mutex
+    (ref-to-closed? reference?)
+    (ref-to-wait-queue reference?)))
+
+(define (new-mutex)
+  (a-mutex (newref #f) (newref '())))
 
 
 (define-datatype environment environment?
@@ -262,10 +304,6 @@
     (cont continuation?))  
   (application-cont 
     (proc procedure?)
-    (cont continuation?))  
-  (begin-cont
-    (rest (list-of expression?))
-    (env environment?)
     (cont continuation?))
   (set-rhs-cont
     (var symbol?)
@@ -274,7 +312,11 @@
   (spawn-cont
     (cont continuation?))
   (end-main-thread-cont)
-  (end-subthread-cont))
+  (end-subthread-cont)
+  (wait-cont
+    (cont continuation?))
+  (signal-cont
+    (cont continuation?)))
 
 (define apply-cont
   (lambda (cont val)
@@ -308,15 +350,13 @@
                 (application-cont (expval->proc val) saved-cont)))
             (application-cont (proc saved-cont)
               (apply-procedure/k proc val saved-cont))
-            (begin-cont (rest env cont)
-              (if (null? rest)
-                  val
-                  (value-of/k (car rest) env (begin-cont (cdr rest) env cont))))
             (set-rhs-cont (var env cont)
-              (begin (setref!
-                        (apply-env env var)
-                        val)
-                     (apply-cont cont (num-val 27))))
+              (begin 
+                ;(display "setting ") (display var) (display " = ") (display val) (newline)
+                (setref!
+                   (apply-env env var)
+                   val)
+                (apply-cont cont (num-val 27))))
             (spawn-cont (saved-cont)
               (let ((proc1 (expval->proc val)))
                 (place-on-ready-queue!
@@ -324,10 +364,48 @@
                     (apply-procedure/k proc1 (num-val 28) (end-subthread-cont))))
                 (apply-cont saved-cont (num-val 73))))
             (end-main-thread-cont ()
+              ;(display "end of main thread")(newline)
               (set-final-answer! val)
               (run-next-thread))
             (end-subthread-cont ()
-              (run-next-thread)))))))
+              ;(display "end of sub thread")(newline)
+              (run-next-thread))
+            (wait-cont (saved-cont)
+              (wait-for-mutex
+                (expval->mutex val)
+                (lambda () (apply-cont saved-cont (num-val 52)))))
+            (signal-cont (saved-cont)
+              (signal-mutex
+                (expval->mutex val)
+                (lambda () (apply-cont saved-cont (num-val 53))))))))))
+
+
+(define (wait-for-mutex m th)
+  (cases mutex m
+    (a-mutex (ref-to-closed? ref-to-wait-queue)
+      (cond
+        ((deref ref-to-closed?)
+         (setref! ref-to-wait-queue
+            (enqueue (deref ref-to-wait-queue) th))
+         (run-next-thread))
+        (else
+          (setref! ref-to-closed? #t)
+          (th))))))
+
+(define (signal-mutex m th)
+  (cases mutex m
+    (a-mutex (ref-to-closed? ref-to-wait-queue)
+      (let ((closed? (deref ref-to-closed?))
+            (wait-queue (deref ref-to-wait-queue)))
+        (if closed?
+            (if (empty? wait-queue)
+                (setref! ref-to-closed? #f)
+                (dequeue wait-queue
+                  (lambda (first-waiting-th other-waiting-ths)                    
+                    (place-on-ready-queue! first-waiting-th)
+                    (setref! ref-to-wait-queue other-waiting-ths))))
+            'ok)
+        (th)))))
 
     
 (define the-ready-queue 'uninitialized)
@@ -374,6 +452,17 @@
 
 (define (dequeue queue fun)
   (fun (car queue) (cdr queue)))
+
+
+(define fresh-identifier
+  (let ((sn 0))
+    (lambda (name)
+      (set! sn (+ 1 sn))
+      (string->symbol
+        (string-append
+          (symbol->string name)
+          "%"
+          (number->string sn))))))
 
 
 (define (assert-eval src expected-val)
@@ -434,14 +523,31 @@
 
 (newline)
 (display "OK")
+(newline)
 
 
+; see how the result changes when commenting out the `wait(mut)` line...
+(newline)
 (display (run "let x = 0
-               in let inc_x = proc (id) proc (dummy) set x = -(x,-1)
+               in let mut = mutex()
+               in let inc_x = proc (id) proc (dummy) 
+                              begin
+                                wait(mut)
+                                let tmp = -(x,-1)
+                                in begin
+                                   1 2 3 4
+                                   set x = tmp 
+                                end
+                                signal(mut)
+                              end
                in begin
                   spawn((inc_x 100))
                   spawn((inc_x 200))
                   spawn((inc_x 300))
+                  % waste a few cycles to give the threads time to finish
+                  1 2 3 4 5 6 7 8 9 
+                  1 2 3 4 5 6 7 8 9 
+                  1 2 3 4 5 6 7 8 9 
                   x
                end"))
 (newline)
