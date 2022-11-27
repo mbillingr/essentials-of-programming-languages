@@ -51,7 +51,11 @@
 
     (expression
       ("set" identifier "=" expression)
-      assign-exp)))
+      assign-exp)
+
+    (expression
+      ("spawn" "(" expression ")")
+      spawn-exp)))
 
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -67,13 +71,14 @@
 
 
 (define (run source)
-  (value-of-program (scan&parse source)))
+  (value-of-program 2 (scan&parse source)))
 
-(define (value-of-program pgm)
+(define (value-of-program timeslice pgm)
   (initialize-store!)
+  (initialize-scheduler! timeslice)
   (cases program pgm
     (a-program (exp1)
-      (value-of/k exp1 (init-env) (end-cont)))))
+      (value-of/k exp1 (init-env) (end-main-thread-cont)))))
 
 (define (value-of/k exp env cont)
   (cases expression exp
@@ -99,7 +104,9 @@
     (begin-exp (first rest)
       (value-of/k first env (begin-cont rest env cont)))
     (assign-exp (var exp1)
-      (value-of/k exp1 env (set-rhs-cont var env cont)))))
+      (value-of/k exp1 env (set-rhs-cont var env cont)))
+    (spawn-exp (exp1)
+      (value-of/k exp1 env (spawn-cont cont)))))
 
 (define-datatype expval expval?
   (num-val (num number?))
@@ -138,7 +145,7 @@
   (lambda (val cont)
     (value-of/k body (extend-env var (newref val) env) cont)))
 
-(define (apply-procedure proc1 val cont)
+(define (apply-procedure/k proc1 val cont)
   (proc1 val cont))
 
 
@@ -263,42 +270,110 @@
   (set-rhs-cont
     (var symbol?)
     (env environment?)
-    (cont continuation?)))
+    (cont continuation?))
+  (spawn-cont
+    (cont continuation?))
+  (end-main-thread-cont)
+  (end-subthread-cont))
 
 (define apply-cont
   (lambda (cont val)
-    (cases continuation cont
-      (end-cont ()
-        (begin ;(println "End of computation.")
-               val))
-      (zero1-cont (saved-cont)
-        (apply-cont saved-cont
-          (bool-val (zero? (expval->num val)))))
-      (let-exp-cont (var body saved-env saved-cont)
-        (value-of/k body
-          (extend-env var (newref val) saved-env) saved-cont))
-      (if-test-cont (exp2 exp3 saved-env saved-cont)
-        (value-of/k (if (expval->bool val) exp2 exp3)
-                    saved-env saved-cont))
-      (diff1-cont (exp2 env saved-cont)
-        (value-of/k exp2 env (diff2-cont val saved-cont)))
-      (diff2-cont (val1 saved-cont)
-        (apply-cont saved-cont
-          (num-val (- (expval->num val1) (expval->num val)))))
-      (rator-cont (rand saved-env saved-cont)
-        (value-of/k rand saved-env 
-          (application-cont (expval->proc val) saved-cont)))
-      (application-cont (proc saved-cont)
-        (apply-procedure proc val saved-cont))
-      (begin-cont (rest env cont)
-        (if (null? rest)
-            val
-            (value-of/k (car rest) env (begin-cont (cdr rest) env cont))))
-      (set-rhs-cont (var env cont)
-        (begin (setref!
-                  (apply-env env var)
-                  val)
-               (apply-cont cont (num-val 27)))))))
+    (if (time-expired?)
+        (begin
+          (place-on-ready-queue!
+            (lambda () (apply-cont cont val)))
+          (run-next-thread))
+        (begin
+          (decrement-timer!)
+          (cases continuation cont
+            (end-cont ()
+              (begin ;(println "End of computation.")
+                     val))
+            (zero1-cont (saved-cont)
+              (apply-cont saved-cont
+                (bool-val (zero? (expval->num val)))))
+            (let-exp-cont (var body saved-env saved-cont)
+              (value-of/k body
+                (extend-env var (newref val) saved-env) saved-cont))
+            (if-test-cont (exp2 exp3 saved-env saved-cont)
+              (value-of/k (if (expval->bool val) exp2 exp3)
+                          saved-env saved-cont))
+            (diff1-cont (exp2 env saved-cont)
+              (value-of/k exp2 env (diff2-cont val saved-cont)))
+            (diff2-cont (val1 saved-cont)
+              (apply-cont saved-cont
+                (num-val (- (expval->num val1) (expval->num val)))))
+            (rator-cont (rand saved-env saved-cont)
+              (value-of/k rand saved-env 
+                (application-cont (expval->proc val) saved-cont)))
+            (application-cont (proc saved-cont)
+              (apply-procedure/k proc val saved-cont))
+            (begin-cont (rest env cont)
+              (if (null? rest)
+                  val
+                  (value-of/k (car rest) env (begin-cont (cdr rest) env cont))))
+            (set-rhs-cont (var env cont)
+              (begin (setref!
+                        (apply-env env var)
+                        val)
+                     (apply-cont cont (num-val 27))))
+            (spawn-cont (saved-cont)
+              (let ((proc1 (expval->proc val)))
+                (place-on-ready-queue!
+                  (lambda ()
+                    (apply-procedure/k proc1 (num-val 28) (end-subthread-cont))))
+                (apply-cont saved-cont (num-val 73))))
+            (end-main-thread-cont ()
+              (set-final-answer! val)
+              (run-next-thread))
+            (end-subthread-cont ()
+              (run-next-thread)))))))
+
+    
+(define the-ready-queue 'uninitialized)
+(define the-final-answer 'uninitialized)
+(define the-max-time-slice 'uninitialized)
+(define the-time-remaining 'uninitialized)
+
+(define (initialize-scheduler! ticks)
+  (set! the-ready-queue (empty-queue))
+  (set! the-final-answer 'uninitialized)
+  (set! the-max-time-slice ticks)
+  (set! the-time-remaining the-max-time-slice))
+
+(define (place-on-ready-queue! th)
+  (set! the-ready-queue (enqueue the-ready-queue th)))
+
+(define (run-next-thread)
+  (if (empty? the-ready-queue)
+      the-final-answer
+      (dequeue the-ready-queue
+        (lambda (first-ready-thread other-ready-threads)
+          (set! the-ready-queue other-ready-threads)
+          (set! the-time-remaining the-max-time-slice)
+          (first-ready-thread)))))
+
+(define (set-final-answer! val)
+  (set! the-final-answer val))
+
+(define (time-expired?)
+  (zero? the-time-remaining))
+
+(define (decrement-timer!)
+  (set! the-time-remaining (- the-time-remaining 1)))
+
+
+(define (empty-queue)
+  '())
+
+(define (empty? queue)
+  (null? queue))
+
+(define (enqueue queue item)
+  (append queue (list item)))
+
+(define (dequeue queue fun)
+  (fun (car queue) (cdr queue)))
 
 
 (define (assert-eval src expected-val)
@@ -359,3 +434,14 @@
 
 (newline)
 (display "OK")
+
+
+(display (run "let x = 0
+               in let inc_x = proc (id) proc (dummy) set x = -(x,-1)
+               in begin
+                  spawn((inc_x 100))
+                  spawn((inc_x 200))
+                  spawn((inc_x 300))
+                  x
+               end"))
+(newline)
