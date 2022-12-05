@@ -275,6 +275,7 @@
 
 
 (define (assert-eval src expected-val)
+  (display ".")
   (let ((val (check src)))
     (check-equal-type! val expected-val src)))
 
@@ -314,3 +315,4 @@
 
 (newline)
 (display "OK")
+(newline)
