@@ -1,6 +1,7 @@
 #lang eopl
 
 ; INFERRED lang, with ...
+;   - pairs
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -25,6 +26,10 @@
     (type
       ("(" type "->" type ")")
       proc-type)
+
+    (type
+      ("pairof" type "*" type)
+      pair-type)
 
     (type
       ("%tvar-type" number)
@@ -67,7 +72,15 @@
 
     (expression
       ("(" expression expression ")")
-      call-exp)))
+      call-exp)
+
+    (expression
+      ("newpair" "(" expression "," expression ")")
+      pair-exp)
+
+    (expression
+      ("unpair" identifier identifier "=" expression "in" expression)
+      unpair-exp)))
 
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -161,7 +174,25 @@
               (let ((subst (unifier p-body-type p-result-type subst p-body)))
                 (type-of letrec-body
                          tenv-for-letrec-body
-                         subst)))))))))
+                         subst)))))))
+    (pair-exp (exp1 exp2)
+      (cases answer (type-of exp1 tenv subst)
+        (an-answer (ty1 subst)
+          (cases answer (type-of exp2 tenv subst)
+            (an-answer (ty2 subst)
+              (an-answer
+                (pair-type ty1 ty2)
+                subst))))))
+    (unpair-exp (var1 var2 exp body)
+      (let ((ty1 (fresh-tvar-type))
+            (ty2 (fresh-tvar-type)))
+        (cases answer (type-of exp tenv subst)
+          (an-answer (ty0 subst)
+            (let ((subst (unifier ty0 (pair-type ty1 ty2) subst exp)))
+              (type-of body 
+                       (extend-tenv var1 ty1 (extend-tenv var2 ty2 tenv)) 
+                       subst))))))))
+
       
 
 (define (report-rator-not-a-proc-type ty expr)
@@ -187,6 +218,10 @@
       (list (type-to-external-form arg-type)
             '->
             (type-to-external-form res-type)))
+    (pair-type (ty1 ty2)
+      (list (type-to-external-form ty1) 
+            '* 
+            (type-to-external-form ty2)))
     (tvar-type (sn)
       (string->symbol      
         (string-append
@@ -212,102 +247,6 @@
     ;      (proc-val (procedure b-var p-body env))
     ;      (apply-env parent search-var)))))
 
-
-(define (run source)
-  (value-of-program (scan&parse source)))
-
-(define (value-of-program pgm)
-  (cases program pgm
-    (a-program (exp1)
-      (value-of exp1 (empty-env)))))
-
-(define (value-of exp env)
-  (cases expression exp
-    (const-exp (num) (num-val num))
-    (var-exp (var) (apply-env env var))
-    (diff-exp (exp1 exp2)
-      (let* ((val1 (value-of exp1 env))
-             (val2 (value-of exp2 env))
-             (num1 (expval->num val1))
-             (num2 (expval->num val2)))
-        (num-val (- num1 num2))))
-    (zero?-exp (exp1)
-      (let* ((val1 (value-of exp1 env))
-             (num1 (expval->num val1)))
-        (if (zero? num1)
-            (bool-val #t)
-            (bool-val #f))))
-    (if-exp (exp1 exp2 exp3)
-      (let ((val1 (value-of exp1 env)))
-        (if (expval->bool val1)
-            (value-of exp2 env)
-            (value-of exp3 env))))
-    (let-exp (var exp1 body)
-      (let ((val1 (value-of exp1 env)))
-        (value-of body
-          (extend-env var val1 env))))
-    (letrec-exp (tres proc-name bound-var tvar proc-body letrec-body)
-      (value-of letrec-body 
-                (extend-env-rec proc-name bound-var proc-body env)))
-    (proc-exp (var tvar body)
-      (proc-val (procedure var body env)))
-    (call-exp (rator rand)
-      (let ((proc (expval->proc (value-of rator env)))
-            (arg (value-of rand env)))
-        (apply-procedure proc arg)))))
-
-(define-datatype expval expval?
-  (num-val (num number?))
-  (bool-val (bool boolean?))
-  (proc-val (proc proc?)))
-
-(define (expval->num val)
-  (cases expval val
-    (num-val (num) num)
-    (else (report-expval-extractor-error 'num val))))
-
-(define (expval->bool val)
-  (cases expval val
-    (bool-val (bool) bool)
-    (else (report-expval-extractor-error 'bool val))))
-
-(define (expval->proc val)    
-  (cases expval val
-    (proc-val (proc) proc)
-    (else (report-expval-extractor-error 'proc val))))
-
-(define (report-expval-extractor-error kind val)
-  (eopl:error kind "expected ~s but got value ~s" kind val))
-
-
-(define (proc? val)
-  (procedure? val))
-
-(define (procedure var body env)
-  (lambda (val)
-    (value-of body (extend-env var val env))))
-
-(define (apply-procedure proc1 val)
-  (proc1 val))
-
-
-(define-datatype environment environment?
-  (empty-env)
-  (extend-env (var symbol?) (val expval?) (env environment?))
-  (extend-env-rec (p-name symbol?) (b-var symbol?) (body expression?) (env environment?)))
-
-(define (apply-env env search-var)
-  (cases environment env
-    (empty-env () 
-      (report-no-binding-found search-var))
-    (extend-env (var val parent) 
-      (if (eqv? var search-var) 
-        val 
-        (apply-env parent search-var)))
-    (extend-env-rec (p-name b-var p-body parent)
-      (if (eqv? p-name search-var)
-          (proc-val (procedure b-var p-body env))
-          (apply-env parent search-var)))))
 
 (define (report-no-binding-found var)
   (eopl:error 'apply-env "No binding for ~s" var))
@@ -337,6 +276,10 @@
       (proc-type
         (apply-one-subst arg-type tvar ty1)
         (apply-one-subst res-type tvar ty1)))
+    (pair-type (a-type b-type)
+      (pair-type
+        (apply-one-subst a-type tvar ty1)
+        (apply-one-subst b-type tvar ty1)))
     (tvar-type (sn)
       (if (equal? ty0 tvar) ty1 ty0))))
 
@@ -346,6 +289,10 @@
       (bool-type () (bool-type))
       (proc-type (t1 t2)
         (proc-type
+           (apply-subst-to-type t1 subst)
+           (apply-subst-to-type t2 subst)))
+      (pair-type (t1 t2)
+        (pair-type
            (apply-subst-to-type t1 subst)
            (apply-subst-to-type t2 subst)))
       (tvar-type (sn)
@@ -412,6 +359,9 @@
     (proc-type (arg-type res-type)
       (and (no-occurrence? tvar arg-type)
            (no-occurrence? tvar res-type)))
+    (pair-type (a-type b-type)
+      (and (no-occurrence? tvar a-type)
+           (no-occurrence? tvar b-type)))
     (tvar-type (sn)
       (not (equal? tvar ty)))))
 
@@ -500,6 +450,10 @@
   "letrec ? double(x : ?) = if zero?(x) then 0 else -((double -(x,1)), -2)
    in double"
   (proc-type (int-type) (int-type)))
+
+(assert-eval
+  "proc (x : ?) newpair(x, x)"
+  (proc-type (tvar-type 1) (pair-type (tvar-type 1) (tvar-type 1))))
 
 (newline)
 (display "OK")
