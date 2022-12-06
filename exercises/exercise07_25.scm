@@ -3,6 +3,17 @@
 ; INFERRED lang, with ...
 ;   - pairs
 ;   - multiple arguments, let, and letrec
+;   - list type
+
+
+(define (dbg context x)
+  (display "DBG: ")
+  (display context)
+  (display " ")
+  (display x)
+  (newline)
+  x)
+
 
 (define the-lexical-spec
   '((whitespace (whitespace) skip)
@@ -105,7 +116,15 @@
 
     (expression
       ("emptylist")
-      emptylist-exp)))
+      emptylist-exp)
+
+    (expression
+      ("first" "(" expression ")")
+      first-exp)
+
+    (expression
+      ("rest" "(" expression ")")
+      rest-exp)))
 
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -178,10 +197,10 @@
         (cases answer (type-of body
                                (extend-tenv* vars var-types tenv)
                                subst)
-          (an-answer (body-type subst)
+          (an-answer (body-type subst1)
             (an-answer
               (proc-type var-types body-type)
-              subst)))))
+              subst1)))))
     (call-exp (rator rands)
       (let ((result-type (fresh-tvar-type)))
         (cases answer (type-of rator tenv subst)
@@ -235,16 +254,27 @@
         (an-answer (ty1 subst1)
           (cases answer (type-of exp2 tenv subst1)
             (an-answer (ty2 subst2)
-              (let ((subst3 (unifier (list-type ty1) ty2 subst exp)))
+              (let ((subst3 (unifier (list-type ty1) ty2 subst2 exp)))
                 (an-answer ty2 subst3)))))))
     (list-exp (exps)
       (if (null? exps)
           (an-answer (list-type (fresh-tvar-type)) subst)
           (cases answer* (type-of* exps tenv subst)
             (an-answer* (types subst1)
-              (an-answer (list-type (car types)) (unify-all (cdr types) (car types) subst1 exp))))))))
-          
-      
+              (an-answer (list-type (car types)) (unify-all (cdr types) (car types) subst1 exp))))))
+    (first-exp (exp1)
+      (cases answer (type-of exp1 tenv subst)
+        (an-answer (ty1 subst1)
+          (let ((item-type (fresh-tvar-type)))
+            (let ((subst2 (unifier ty1 (list-type item-type) subst1 exp)))
+              (an-answer item-type subst2))))))
+    (rest-exp (exp1)
+      (cases answer (type-of exp1 tenv subst)
+        (an-answer (ty1 subst1)
+          (let ((item-type (fresh-tvar-type)))
+            (let ((subst2 (unifier ty1 (list-type item-type) subst1 exp)))
+              (an-answer (list-type item-type) subst2))))))))
+                
 
 (define (type-of* exp* tenv subst)
   (define (loop exp* ty* subst)
@@ -539,7 +569,7 @@
 
 (define (assert-eval src expected)
   (let ((ty1 (type-to-external-form (check src)))
-        (ty2 (type-to-external-form expected)))
+        (ty2 expected))
     (if (equal-up-to-gensyms? ty1 ty2)
         (display ".")
         (eopl:error 'assert "~s != ~s" ty1 ty2))))
@@ -547,52 +577,52 @@
 
 (assert-eval 
   "42" 
-  (int-type))
+  'int)
 
 (assert-eval
   "-(8,5)"
-  (int-type))
+  'int)
 
 (assert-eval
   "zero? (0)"
-  (bool-type))
+  'bool)
 
 (assert-eval
   "zero? (5)"
-  (bool-type))
+  'bool)
 
 (assert-eval
   "if zero? (0) then 1 else 2"
-  (int-type))
+  'int)
 
 (assert-eval
   "let x = 123 in x"
-  (int-type))
+  'int)
 
 (assert-eval
   "let x = 123 in proc (x:?) x"
-  (proc-type (list (tvar-type 1)) (tvar-type 1)))
+  '(t1 -> t1))
 
 (assert-eval
   "letrec ? double(x : ?) = if zero?(x) then 0 else -((double -(x,1)), -2)
    in double"
-  (proc-type (list (int-type)) (int-type)))
+  '(int -> int))
 
 (assert-eval
   "proc (x : ?) newpair(x, x)"
-  (proc-type (list (tvar-type 1)) (pair-type (tvar-type 1) (tvar-type 1))))
+  '(t1 -> (t1 * t1)))
 
 (assert-eval
   "proc () 0"
-  (proc-type (list) (int-type)))
+  '(-> int))
 
 (assert-eval
   "proc (x:int y:? z:?) y"
-  (proc-type (list (int-type) (tvar-type 1) (tvar-type 2)) (tvar-type 1)))
+  '(int t1 t2 -> t1))
 
 (assert-eval
   "let x = 1 y = 2 in newpair(x,y)"
-  (pair-type (int-type) (int-type)))
+  '(int * int))
 
 (assert-eval
   "letrec 
@@ -602,52 +632,52 @@
      ? odd(x:?) = if zero?(x) then (false) else (even -(x,1))
    in
      newpair(even, odd)"
-  (pair-type (proc-type (list (int-type)) (bool-type)) 
-             (proc-type (list (int-type)) (bool-type))))
+  '((int -> bool) * (int -> bool)))
 
 (assert-eval
   "emptylist"
-  (list-type (tvar-type 1)))
+  '(list-of t1))
 
 (assert-eval
   "list()"
-  (list-type (tvar-type 1)))
+  '(list-of t1))
 
 (assert-eval
   "list(1)"
-  (list-type (int-type)))
+  '(list-of int))
 
 (assert-eval
   "list(1,2,3)"
-  (list-type (int-type)))
+  '(list-of int))
 
 (assert-eval
   "null?(emptylist)"
-  (bool-type))
+  'bool)
 
 (assert-eval
   "null?(list(1,2))"
-  (bool-type))
+  'bool)
 
 (assert-eval
   "cons(0,emptylist)"
-  (list-type (int-type)))
+  '(list-of int))
 
 (assert-eval
   "proc (x:?) list(x,x)"
-  (proc-type (list (tvar-type 1)) (list-type (tvar-type 1))))
+  '(t1 -> (list-of t1)))
+  
+(assert-eval
+  "first(list(1))"
+  'int)
 
 (assert-eval
-  "proc (x:[?]) x"
-  (proc-type (list (list-type (tvar-type 1))) (list-type (tvar-type 1))))
+  "proc (x:[?]) first(x)"
+  '((list-of t1) -> t1))
+
+(assert-eval
+  "proc (x:? y:?) cons(rest(x), rest(y))"
+  '((list-of t1) (list-of (list-of t1)) -> (list-of (list-of t1))))
 
 (newline)
 (display "OK")
 (newline)
-
-
-(define (dbg x)
-  (display "DBG: ")
-  (display x)
-  (newline)
-  x)
