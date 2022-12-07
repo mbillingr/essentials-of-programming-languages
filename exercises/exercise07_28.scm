@@ -500,7 +500,7 @@
     (bool-type () (bool-type))
     (proc-type (arg-types res-type)
       (proc-type
-        (map (lambda (t) apply-one-subst t tvar ty1) arg-types)
+        (map (lambda (t) (apply-one-subst t tvar ty1)) arg-types)
         (apply-one-subst res-type tvar ty1)))
     (pair-type (a-type b-type)
       (pair-type
