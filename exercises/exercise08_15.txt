@@ -1,0 +1,41 @@
+
+module tables
+  interface [
+    opaque table]
+    empty : table
+    add-to-table : (int -> (int -> (table -> table)))
+    lookup-in-table : (int -> (table -> int))
+  ]
+  body [
+    type table = (int -> int)
+
+    empty = proc (key : int) 0
+
+    add-to-table = proc (key : int)
+                     proc (val : int)
+                       proc (tbl : table)
+                         proc (lookup-key : int)
+                           if ((equal? lookup-key) key)
+                           then val
+                           else (tbl lookup-key)
+
+    lookup-in-table = proc (lookup-key : int)
+                        proc (tbl : table)
+                          (tbl lookup-key)
+
+    equal? = proc (a : int)
+               proc (b : int)
+                 zero?(-(a,b))
+  ]
+
+let empty = from tables take empty
+in let add-binding = from tables take add-to-table
+in let lookup = from tables take lookup-in-table
+in let table1 = (((add-binding 3) 300)
+                 (((add-binding 4) 400)
+                  (((add-binding 3) 600)
+                   empty)))
+in -(((lookup 4) table1),
+     ((lookup 3) table1))
+
+; should result in 100
